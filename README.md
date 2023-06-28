@@ -3,6 +3,5 @@ This project has been written using the MVC pattern. To improve myself in the Vi
 
 https://github.com/berkangzgn/VeroDS
 
-### Images
+Additionally, some minor modifications have been made to the code, but I haven't touched its main structure. It doesn't have any relation to me in terms of code quality.
 
-<img src="/Images/VeroDS.gif"  width="350"/>
