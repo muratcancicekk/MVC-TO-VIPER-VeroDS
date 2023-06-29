@@ -31,28 +31,16 @@ final class HomePresenter: Presenterable {
     
 }
 extension HomePresenter: HomeViewOutputs {
-    func qrBtnClicked(controller: HomeViewController) {
-        let session = AVCaptureSession()
-        guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
-        
-        do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            session.addInput(input)
-        } catch let error {
-            print(error.localizedDescription)
-            return
+    func configureQrOperations() {
+        let previewLayer = dependencies.interactor.avCapture()
+        view?.previewLayerAddSublayer(previewLayer: previewLayer)
+        dependencies.interactor.sessionStart()
         }
-        
-        let output = AVCaptureMetadataOutput()
-        session.addOutput(output)
-        
-        output.metadataObjectTypes = [AVMetadataObject.ObjectType.qr]
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.frame = controller.view.layer.bounds
-        controller.view.layer.addSublayer(previewLayer)
-        
-        session.startRunning()
+    
+    func qrBtnClicked(controller: HomeViewController) {
+        let previewLayer = dependencies.interactor.avCapture()
+        view?.previewLayerAddSublayer(previewLayer: previewLayer)
+        dependencies.interactor.sessionStart()
     }
     
     
@@ -103,23 +91,8 @@ extension HomePresenter: HomeViewOutputs {
     }
     
     func checkInternetConnection() {
-        let reachability = try! Reachability()
-        if reachability.connection == .unavailable { // offline
-            guard let url = entites.localDataURL else {return}
-            
-            if let savedData = try? Data(contentsOf: url) {
-                dependencies.interactor.processData(data: savedData) {
-                    self.entites.data = HomeEntities.responseAPI
-                    self.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: self.entites))
-                }
-            }
-            
-        } else { // online
-            dependencies.interactor.getAccessToken {
-                self.dependencies.interactor.getLocalDataURL {
-                    self.dependencies.interactor.getDatas()
-                }
-            }
+        dependencies.interactor.checkInternetConnection {
+            self.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: self.entites))
         }
     }
     

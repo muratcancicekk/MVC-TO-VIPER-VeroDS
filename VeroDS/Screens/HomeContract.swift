@@ -17,12 +17,14 @@ protocol HomeViewInputs: AnyObject {
     func configureQrOperations()
     func indicatorView(animate: Bool)
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection)
+    func previewLayerAddSublayer(previewLayer: AVCaptureVideoPreviewLayer)
 }
 protocol HomeViewOutputs: AnyObject {
     func viewDidLoad()
     func checkInternetConnection()
     func searchData(searchText: String)
     func qrBtnClicked(controller: HomeViewController)
+    func configureQrOperations()
     
 }
 protocol HomeInteractorOutputs: AnyObject {
@@ -34,4 +36,8 @@ protocol HomeInteractorInputs: AnyObject {
     func getLocalDataURL(success: @escaping (() -> Void? ))
     func getDatas()
     func processData(data: Data, success: @escaping (() -> Void?))
+    func avCapture() -> AVCaptureVideoPreviewLayer
+    func sessionStart()
+    var session: AVCaptureSession? { get }
+    func checkInternetConnection(tableViewReload: @escaping (() -> Void))
 }

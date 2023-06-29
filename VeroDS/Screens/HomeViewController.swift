@@ -9,7 +9,7 @@ import UIKit
 import Reachability
 import AVFoundation
 
-class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetadataOutputObjectsDelegate {
+class HomeViewController: UIViewController, UITextFieldDelegate {
     
     @IBOutlet weak var qrBtn: UIButton!
     @IBOutlet weak var searchTF: UITextField!
@@ -23,7 +23,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetada
     let refreshControl = UIRefreshControl()
     
     var captureSession: AVCaptureSession!
-    var previewLayer: AVCaptureVideoPreviewLayer!
     
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -81,6 +80,11 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
     
 }
 extension HomeViewController: HomeViewInputs {
+    func previewLayerAddSublayer(previewLayer: AVCaptureVideoPreviewLayer) {
+        previewLayer.frame = view.layer.bounds
+        view.layer.addSublayer(previewLayer)
+    }
+    
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         captureSession.stopRunning()
 
@@ -101,29 +105,7 @@ extension HomeViewController: HomeViewInputs {
         }
     }
     func configureQrOperations() {
-        // QR code operations
-        captureSession = AVCaptureSession()
-
-        guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
-
-        do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            captureSession.addInput(input)
-        } catch let error {
-            print(error.localizedDescription)
-            return
-        }
-
-        let output = AVCaptureMetadataOutput()
-        captureSession.addOutput(output)
-        output.metadataObjectTypes = [AVMetadataObject.ObjectType.qr]
-        
-        previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.layer.bounds
-        view.layer.addSublayer(previewLayer)
-        captureSession.startRunning()
-        
-        output.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        presenter?.configureQrOperations()
     }
     
     func configureTableView() {
