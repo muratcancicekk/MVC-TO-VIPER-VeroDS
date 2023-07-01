@@ -43,84 +43,81 @@ extension HomePresenter: HomeViewOutputs {
         dependencies.interactor.sessionStart()
     }
     
-    
     func searchData(searchText: String) {
-        guard !searchText.isEmpty && HomeEntities.responseAPI != nil else {
+        guard !searchText.isEmpty && dependencies.interactor.responseAPI != nil else {
             return
         }
-        entites.data?.removeAll()
+        dependencies.interactor.homeData?.removeAll()
        
         // Search of all value
-        guard let datas = HomeEntities.responseAPI else {return}
+        guard let datas = dependencies.interactor.responseAPI else {return}
         for response in datas {
             
             if response.BusinessUnitKey?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.businessUnit?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.colorCode?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.description?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.parentTaskID?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.preplanningBoardQuickSelect?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.task?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.title?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.workingTime?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
             }
         }
         
-        if entites.data?.isEmpty == true {
-            entites.data = HomeEntities.responseAPI
+        if  dependencies.interactor.homeData?.isEmpty == true {
+            guard let responceAPI = dependencies.interactor.responseAPI else { return }
+            dependencies.interactor.homeData? = responceAPI
         }
         
-        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: entites))
+        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
     }
     
     func checkInternetConnection() {
-        dependencies.interactor.checkInternetConnection {
-            self.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: self.entites))
+        dependencies.interactor.checkInternetConnection { [weak self] in
+            guard let interactor = self?.dependencies.interactor else { return }
+            self?.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: interactor))
         }
     }
     
     func viewDidLoad() {
+        checkInternetConnection()
         view?.indicatorView(animate: true)
         view?.configure()
         view?.configureSearchView()
         view?.configureTableView()
         view?.configureQrOperations()
-        dependencies.interactor.getAccessToken {
-            self.dependencies.interactor.getLocalDataURL {
-                self.dependencies.interactor.getDatas()
-            }
-        }
+        dependencies.interactor.getAccessToken()
     }
 }
 
 extension HomePresenter: HomeInteractorOutputs {
     func onSuccessSearch(data: [HomeEntities.Response]?) {
         guard let data = data else { return }
-        entites.data = data
-        HomeEntities.responseAPI = data
+        dependencies.interactor.homeData = data
+        dependencies.interactor.responseAPI = data
         view?.indicatorView(animate: false)
-        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: entites))
+        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
     }
     
     func onErrorSearch(error: String) {
         print(error)
     }
-    
 }

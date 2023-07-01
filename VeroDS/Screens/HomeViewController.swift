@@ -21,9 +21,7 @@ class HomeViewController: UIViewController, UITextFieldDelegate {
 
     let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.large)
     let refreshControl = UIRefreshControl()
-    
-    var captureSession: AVCaptureSession!
-    
+        
     init() {
         super.init(nibName: nil, bundle: nil)
         HomeConfigurator.sharedInstance.configure(viewController: self)
@@ -37,7 +35,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate {
     /// Lifecycles
     override func viewDidLoad() {
         super.viewDidLoad()
-        presenter?.checkInternetConnection()
         presenter?.viewDidLoad()
     }
     
@@ -64,8 +61,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate {
     @objc func textFieldDidChange(_ textField: UITextField) {
         presenter?.searchData(searchText: textField.text ?? "")
     }
-    
-
 }
 
 extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
@@ -86,12 +81,11 @@ extension HomeViewController: HomeViewInputs {
     }
     
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
-
+        
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
-
+            
             searchTF.text = stringValue
         }
         dismiss(animated: true)
@@ -146,7 +140,7 @@ extension HomeViewController: HomeViewInputs {
         refreshControl.addTarget(self, action: #selector(refresh(_:)), for: .valueChanged)
         resultTV.addSubview(refreshControl)
     }
-    
+
 }
 
 extension HomeViewController: Viewable {}

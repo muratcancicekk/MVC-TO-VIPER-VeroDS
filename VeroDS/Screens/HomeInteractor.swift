@@ -9,47 +9,57 @@ import Foundation
 import AVFoundation
 import Reachability
 
-final class HomeInteractor: Interactorable {
+final class HomeInteractor: Interactorable, HomeDataStore {
+    var responseAPI: [HomeEntities.Response]?
+    var localDataURL: URL?
+    var accessToken: String?
+    var homeData: [HomeEntities.Response]?
+    var searchData: [HomeEntities.Response]?
+    
     let entities = HomeEntities()
     var presenter: HomeInteractorOutputs?
     var session: AVCaptureSession?
 }
 extension HomeInteractor: HomeInteractorInputs {
+    func sessionStop() {
+        session?.stopRunning()
+    }
+    
     func sessionStart() {
         session?.startRunning()
     }
     
-    
     func processData(data: Data, success: @escaping (() -> Void?)) {
         do {
             let decoder = JSONDecoder()
-            HomeEntities.responseAPI = try decoder.decode([HomeEntities.Response].self, from: data)
-            success()
+            responseAPI = try decoder.decode([HomeEntities.Response].self, from: data)
         } catch {
             print("Error parsing JSON: \(error.localizedDescription)")
         }
     }
     
     func getDatas() {
-        Api().getAPIData(accessToken: entities.accessToken, savedDataURL: entities.localDataURL!) {(result: Result<[HomeEntities.Response], Error>) in
+        guard let accessToken = accessToken else { return }
+        Api().getAPIData(accessToken: accessToken, savedDataURL:localDataURL!) {[ weak self] (result: Result<[HomeEntities.Response], Error>) in
             switch result {
             case .success(let success):
-                self.presenter?.onSuccessSearch(data: success)
+                self?.presenter?.onSuccessSearch(data: success)
             case .failure(let failure):
-                self.presenter?.onErrorSearch(error: failure.localizedDescription)
+                self?.presenter?.onErrorSearch(error: failure.localizedDescription)
             }
         }
     }
     
-    func getLocalDataURL(success: @escaping (() -> Void?)) {
-        entities.localDataURL = Api().getLocalDataURL()
-        success()
+    func getLocalDataURL() {
+        localDataURL = Api().getLocalDataURL()
+        getDatas()
     }
     
-    func getAccessToken(success: @escaping (() -> Void?)) {
+    func getAccessToken() {
         AccessToken().loginAPI { [weak self] accessToken  in
-            self?.entities.accessToken = accessToken
-            success()
+            self?.accessToken = accessToken
+            self?.getLocalDataURL()
+            
         }
     }
     func avCapture() -> AVCaptureVideoPreviewLayer  {
@@ -70,25 +80,22 @@ extension HomeInteractor: HomeInteractorInputs {
         
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         return previewLayer
+        
     }
     func checkInternetConnection(tableViewReload: @escaping (() -> Void )) {
         let reachability = try! Reachability()
         if reachability.connection == .unavailable { // offline
-            guard let url = entities.localDataURL else {return}
+            guard let url = localDataURL else {return}
             
             if let savedData = try? Data(contentsOf: url) {
                 processData(data: savedData) {
-                    self.entities.data = HomeEntities.responseAPI
+                    self.homeData = self.responseAPI
                     tableViewReload()
                 }
             }
             
         } else { // online
-            getAccessToken {
-                self.getLocalDataURL {
-                    self.getDatas()
-                }
-            }
+            getAccessToken()
         }
     }
 }
