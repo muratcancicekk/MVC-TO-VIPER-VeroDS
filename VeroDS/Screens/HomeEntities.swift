@@ -8,11 +8,6 @@
 import Foundation
 
 final class HomeEntities {
-    var localDataURL: URL? = URL(string: "")
-    var accessToken: String = ""
-    var data: [Response]?
-    var searchData: [Response]?
-    static var responseAPI: [Response]?
     
     struct Response: Codable {
         let BusinessUnitKey: String?

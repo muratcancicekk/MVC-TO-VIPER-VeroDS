@@ -31,123 +31,93 @@ final class HomePresenter: Presenterable {
     
 }
 extension HomePresenter: HomeViewOutputs {
-    func qrBtnClicked(controller: HomeViewController) {
-        let session = AVCaptureSession()
-        guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
-        
-        do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            session.addInput(input)
-        } catch let error {
-            print(error.localizedDescription)
-            return
+    func configureQrOperations() {
+        let previewLayer = dependencies.interactor.avCapture()
+        view?.previewLayerAddSublayer(previewLayer: previewLayer)
+        dependencies.interactor.sessionStart()
         }
-        
-        let output = AVCaptureMetadataOutput()
-        session.addOutput(output)
-        
-        output.metadataObjectTypes = [AVMetadataObject.ObjectType.qr]
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.frame = controller.view.layer.bounds
-        controller.view.layer.addSublayer(previewLayer)
-        
-        session.startRunning()
+    
+    func qrBtnClicked(controller: HomeViewController) {
+        let previewLayer = dependencies.interactor.avCapture()
+        view?.previewLayerAddSublayer(previewLayer: previewLayer)
+        dependencies.interactor.sessionStart()
     }
     
-    
     func searchData(searchText: String) {
-        guard !searchText.isEmpty && HomeEntities.responseAPI != nil else {
+        guard !searchText.isEmpty && dependencies.interactor.responseAPI != nil else {
             return
         }
-        entites.data?.removeAll()
+        dependencies.interactor.homeData?.removeAll()
        
         // Search of all value
-        guard let datas = HomeEntities.responseAPI else {return}
+        guard let datas = dependencies.interactor.responseAPI else {return}
         for response in datas {
             
             if response.BusinessUnitKey?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.businessUnit?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.colorCode?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.description?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.parentTaskID?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.preplanningBoardQuickSelect?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.task?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.title?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
                 
             } else if response.workingTime?.range(of: searchText, options: .caseInsensitive) != nil {
-                entites.data?.append(response)
+                dependencies.interactor.homeData?.append(response)
             }
         }
         
-        if entites.data?.isEmpty == true {
-            entites.data = HomeEntities.responseAPI
+        if  dependencies.interactor.homeData?.isEmpty == true {
+            guard let responceAPI = dependencies.interactor.responseAPI else { return }
+            dependencies.interactor.homeData? = responceAPI
         }
         
-        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: entites))
+        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
     }
     
     func checkInternetConnection() {
-        let reachability = try! Reachability()
-        if reachability.connection == .unavailable { // offline
-            guard let url = entites.localDataURL else {return}
-            
-            if let savedData = try? Data(contentsOf: url) {
-                dependencies.interactor.processData(data: savedData) {
-                    self.entites.data = HomeEntities.responseAPI
-                    self.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: self.entites))
-                }
-            }
-            
-        } else { // online
-            dependencies.interactor.getAccessToken {
-                self.dependencies.interactor.getLocalDataURL {
-                    self.dependencies.interactor.getDatas()
-                }
-            }
+        dependencies.interactor.checkInternetConnection { [weak self] in
+            guard let interactor = self?.dependencies.interactor else { return }
+            self?.view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: interactor))
         }
     }
     
     func viewDidLoad() {
+        checkInternetConnection()
         view?.indicatorView(animate: true)
         view?.configure()
         view?.configureSearchView()
         view?.configureTableView()
         view?.configureQrOperations()
-        dependencies.interactor.getAccessToken {
-            self.dependencies.interactor.getLocalDataURL {
-                self.dependencies.interactor.getDatas()
-            }
-        }
+        dependencies.interactor.getAccessToken()
     }
 }
 
 extension HomePresenter: HomeInteractorOutputs {
     func onSuccessSearch(data: [HomeEntities.Response]?) {
         guard let data = data else { return }
-        entites.data = data
-        HomeEntities.responseAPI = data
+        dependencies.interactor.homeData = data
+        dependencies.interactor.responseAPI = data
         view?.indicatorView(animate: false)
-        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(entities: entites))
+        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
     }
     
     func onErrorSearch(error: String) {
         print(error)
     }
-    
 }

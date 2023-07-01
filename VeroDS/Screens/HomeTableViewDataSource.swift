@@ -10,20 +10,20 @@ import UIKit
 
 final class HomeTableViewDataSource: TableViewDataSource {
     
-    private var entities: HomeEntities!
+    private var interactor: HomeInteractor!
 
-    init(entities: HomeEntities!) {
-        self.entities = entities
+    init(interactor: HomeInteractor) {
+        self.interactor = interactor
     }
     
     var numberOfItems: Int {
-        return entities.data?.count ?? 0
+        return interactor.homeData?.count ?? 0
     }
     
     func itemCell(tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ResultCell", for: indexPath) as! ResultTableViewCell
         var resultText: String?
-        let currentResult = entities.data?[indexPath.row]
+        let currentResult = interactor.homeData?[indexPath.row]
         
         if currentResult?.title != nil { resultText = "\(String(describing: currentResult?.title ?? ""))\n" }
         if currentResult?.task != nil { resultText = "\(String(describing: currentResult?.task ?? ""))\n" }

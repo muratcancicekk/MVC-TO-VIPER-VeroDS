@@ -9,7 +9,7 @@ import UIKit
 import Reachability
 import AVFoundation
 
-class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetadataOutputObjectsDelegate {
+class HomeViewController: UIViewController, UITextFieldDelegate {
     
     @IBOutlet weak var qrBtn: UIButton!
     @IBOutlet weak var searchTF: UITextField!
@@ -21,10 +21,7 @@ class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetada
 
     let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.large)
     let refreshControl = UIRefreshControl()
-    
-    var captureSession: AVCaptureSession!
-    var previewLayer: AVCaptureVideoPreviewLayer!
-    
+        
     init() {
         super.init(nibName: nil, bundle: nil)
         HomeConfigurator.sharedInstance.configure(viewController: self)
@@ -38,7 +35,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetada
     /// Lifecycles
     override func viewDidLoad() {
         super.viewDidLoad()
-        presenter?.checkInternetConnection()
         presenter?.viewDidLoad()
     }
     
@@ -65,8 +61,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate, AVCaptureMetada
     @objc func textFieldDidChange(_ textField: UITextField) {
         presenter?.searchData(searchText: textField.text ?? "")
     }
-    
-
 }
 
 extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
@@ -81,13 +75,17 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
     
 }
 extension HomeViewController: HomeViewInputs {
+    func previewLayerAddSublayer(previewLayer: AVCaptureVideoPreviewLayer) {
+        previewLayer.frame = view.layer.bounds
+        view.layer.addSublayer(previewLayer)
+    }
+    
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
-
+        
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
-
+            
             searchTF.text = stringValue
         }
         dismiss(animated: true)
@@ -101,29 +99,7 @@ extension HomeViewController: HomeViewInputs {
         }
     }
     func configureQrOperations() {
-        // QR code operations
-        captureSession = AVCaptureSession()
-
-        guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
-
-        do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            captureSession.addInput(input)
-        } catch let error {
-            print(error.localizedDescription)
-            return
-        }
-
-        let output = AVCaptureMetadataOutput()
-        captureSession.addOutput(output)
-        output.metadataObjectTypes = [AVMetadataObject.ObjectType.qr]
-        
-        previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.layer.bounds
-        view.layer.addSublayer(previewLayer)
-        captureSession.startRunning()
-        
-        output.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        presenter?.configureQrOperations()
     }
     
     func configureTableView() {
@@ -164,7 +140,7 @@ extension HomeViewController: HomeViewInputs {
         refreshControl.addTarget(self, action: #selector(refresh(_:)), for: .valueChanged)
         resultTV.addSubview(refreshControl)
     }
-    
+
 }
 
 extension HomeViewController: Viewable {}

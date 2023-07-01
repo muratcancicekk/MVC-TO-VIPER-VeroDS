@@ -10,9 +10,7 @@ import UIKit
 final class HomeRoute:Routerable  {
     internal weak var view: Viewable!
 
-
     let navigationController: UINavigationController
-
     var viewController: HomeViewController
 
     init(view: HomeViewController,viewable: Viewable) {
