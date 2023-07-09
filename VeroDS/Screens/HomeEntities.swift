@@ -21,4 +21,5 @@ final class HomeEntities {
         let wageType: String?
         let workingTime: String?
     }
+    
 }

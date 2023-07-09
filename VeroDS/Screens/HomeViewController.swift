@@ -9,19 +9,19 @@ import UIKit
 import Reachability
 import AVFoundation
 
-class HomeViewController: UIViewController, UITextFieldDelegate {
+final class HomeViewController: UIViewController {
     
-    @IBOutlet weak var qrBtn: UIButton!
-    @IBOutlet weak var searchTF: UITextField!
-    @IBOutlet weak var searchV: UIView!
-    @IBOutlet weak var resultTV: UITableView!
+    @IBOutlet private weak var qrBtn: UIButton!
+    @IBOutlet private weak var searchTF: UITextField!
+    @IBOutlet private weak var searchV: UIView!
+    @IBOutlet private weak var resultTV: UITableView!
     
     var presenter: HomePresenter?
     var tableViewDataSource: TableViewDataSource?
-
-    let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.large)
-    let refreshControl = UIRefreshControl()
-        
+    
+    private let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.large)
+    private let refreshControl = UIRefreshControl()
+    
     init() {
         super.init(nibName: nil, bundle: nil)
         HomeConfigurator.sharedInstance.configure(viewController: self)
@@ -52,15 +52,6 @@ class HomeViewController: UIViewController, UITextFieldDelegate {
         sender.endRefreshing()
     }
     
-    /// Textfield operations
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        searchTF.resignFirstResponder()
-        return true
-    }
-    
-    @objc func textFieldDidChange(_ textField: UITextField) {
-        presenter?.searchData(searchText: textField.text ?? "")
-    }
 }
 
 extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
@@ -75,20 +66,14 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
     
 }
 extension HomeViewController: HomeViewInputs {
+    
+    func metaDataSearch(searchText: String) {
+        searchTF.text = searchText
+    }
+    
     func previewLayerAddSublayer(previewLayer: AVCaptureVideoPreviewLayer) {
         previewLayer.frame = view.layer.bounds
         view.layer.addSublayer(previewLayer)
-    }
-    
-    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        
-        if let metadataObject = metadataObjects.first {
-            guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
-            guard let stringValue = readableObject.stringValue else { return }
-            
-            searchTF.text = stringValue
-        }
-        dismiss(animated: true)
     }
     
     func indicatorView(animate: Bool) {
@@ -98,6 +83,7 @@ extension HomeViewController: HomeViewInputs {
             self.activityIndicator.isHidden = !animate
         }
     }
+    
     func configureQrOperations() {
         presenter?.configureQrOperations()
     }
@@ -108,16 +94,9 @@ extension HomeViewController: HomeViewInputs {
     }
     
     func configureSearchView() {
-        // Search view border and radius
-        searchV.layer.borderColor = UIColor.separator.cgColor
-        searchV.layer.borderWidth = 2.0
-        searchV.layer.cornerRadius = 10
+        searchV.setupView(borderColor: .red, borderWidth: 2.0, cornerRadius: 10)
         
-        searchTF.addTarget(self, action: #selector(HomeViewController.textFieldDidChange(_:)), for: .editingChanged)
-        searchTF.returnKeyType = .search
-        searchTF.keyboardType = .webSearch
-        searchTF.delegate = self
-        searchTF.placeholder = "Search VerosDS..."
+        searchTF.setupSearchTextField(target: self, action: #selector(HomeViewController.textFieldDidChange(_:)), returnKeyType: .search, keyboardType: .webSearch, delegate: self, placeholder: "Search VerosDS...")
     }
     
     func tableViewReload(tableViewDataSource: TableViewDataSource) {
@@ -128,19 +107,30 @@ extension HomeViewController: HomeViewInputs {
     }
     
     func configure() {
-        // Activity indicator opreations
         activityIndicator.center = view.center
         view.addSubview(activityIndicator)
         
-        // Close keyboard anywhere
         let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(closeKeyboard))
         view.addGestureRecognizer(gestureRecognizer)
         
-        // Pull-to-refresh created
         refreshControl.addTarget(self, action: #selector(refresh(_:)), for: .valueChanged)
         resultTV.addSubview(refreshControl)
     }
+    
+}
 
+extension HomeViewController: UITextFieldDelegate {
+    
+    /// Textfield operations
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchTF.resignFirstResponder()
+        return true
+    }
+    
+    @objc func textFieldDidChange(_ textField: UITextField) {
+        presenter?."textFieldDidChange(text: textField.text ?? "")
+    }
+    
 }
 
 extension HomeViewController: Viewable {}

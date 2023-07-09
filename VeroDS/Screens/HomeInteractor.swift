@@ -20,6 +20,7 @@ final class HomeInteractor: Interactorable, HomeDataStore {
     var presenter: HomeInteractorOutputs?
     var session: AVCaptureSession?
 }
+
 extension HomeInteractor: HomeInteractorInputs {
     func sessionStop() {
         session?.stopRunning()
@@ -82,6 +83,17 @@ extension HomeInteractor: HomeInteractorInputs {
         return previewLayer
         
     }
+    
+    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection)  {
+        
+        if let metadataObject = metadataObjects.first {
+            guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
+            guard let stringValue = readableObject.stringValue else { return }
+            
+            presenter?.metaDataOutput(data: stringValue)
+        }
+    }
+    
     func checkInternetConnection(tableViewReload: @escaping (() -> Void )) {
         let reachability = try! Reachability()
         if reachability.connection == .unavailable { // offline
@@ -98,5 +110,54 @@ extension HomeInteractor: HomeInteractorInputs {
             getAccessToken()
         }
     }
+    
+    func searchData(searchText: String) {
+        // TODO: Interactor?
+        guard !searchText.isEmpty && responseAPI != nil else {
+            return
+        }
+        homeData?.removeAll()
+        
+        // Search of all value
+        guard let datas = responseAPI else {return}
+        for response in datas {
+            
+            
+            if response.BusinessUnitKey?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.businessUnit?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.colorCode?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.description?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.parentTaskID?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.preplanningBoardQuickSelect?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.task?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.title?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+                
+            } else if response.workingTime?.range(of: searchText, options: .caseInsensitive) != nil {
+                homeData?.append(response)
+            }
+        }
+        
+        if  homeData?.isEmpty == true {
+            guard let responseAPI = responseAPI else { return }
+            homeData? = responseAPI
+        }
+        
+    }
+    
 }
 

@@ -16,20 +16,21 @@ protocol HomeViewInputs: AnyObject {
     func configureTableView()
     func configureQrOperations()
     func indicatorView(animate: Bool)
-    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection)
     func previewLayerAddSublayer(previewLayer: AVCaptureVideoPreviewLayer)
+    func metaDataSearch(searchText: String)
 }
 protocol HomeViewOutputs: AnyObject {
     func viewDidLoad()
     func checkInternetConnection()
-    func searchData(searchText: String)
     func qrBtnClicked(controller: HomeViewController)
     func configureQrOperations()
+    func textFieldDidChange(text: String)
     
 }
 protocol HomeInteractorOutputs: AnyObject {
     func onSuccessSearch(data: [HomeEntities.Response]?)
     func onErrorSearch(error: String)
+    func metaDataOutput(data: String)
 }
 protocol HomeInteractorInputs: AnyObject {
     func getAccessToken()
@@ -41,6 +42,8 @@ protocol HomeInteractorInputs: AnyObject {
     func sessionStop()
     var session: AVCaptureSession? { get }
     func checkInternetConnection(tableViewReload: @escaping (() -> Void))
+    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection)
+    func searchData(searchText: String)
 }
 protocol HomeDataStore: AnyObject {
     var localDataURL: URL? { get set }

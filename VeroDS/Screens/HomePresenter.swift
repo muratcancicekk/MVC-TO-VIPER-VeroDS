@@ -17,20 +17,19 @@ typealias HomePresenterDependencies = (
 
 final class HomePresenter: Presenterable {
     
-    var entites: HomeEntities
     var view: HomeViewInputs?
     let dependencies: HomePresenterDependencies
     
     init(view: HomeViewInputs,
-         entites: HomeEntities,
+         entities: HomeEntities,
          dependencies: HomePresenterDependencies) {
         self.view = view
-        self.entites = entites
         self.dependencies = dependencies
     }
     
 }
 extension HomePresenter: HomeViewOutputs {
+    
     func configureQrOperations() {
         let previewLayer = dependencies.interactor.avCapture()
         view?.previewLayerAddSublayer(previewLayer: previewLayer)
@@ -43,50 +42,8 @@ extension HomePresenter: HomeViewOutputs {
         dependencies.interactor.sessionStart()
     }
     
-    func searchData(searchText: String) {
-        guard !searchText.isEmpty && dependencies.interactor.responseAPI != nil else {
-            return
-        }
-        dependencies.interactor.homeData?.removeAll()
-       
-        // Search of all value
-        guard let datas = dependencies.interactor.responseAPI else {return}
-        for response in datas {
-            
-            if response.BusinessUnitKey?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.businessUnit?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.colorCode?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.description?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.parentTaskID?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.preplanningBoardQuickSelect?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.task?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.title?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-                
-            } else if response.workingTime?.range(of: searchText, options: .caseInsensitive) != nil {
-                dependencies.interactor.homeData?.append(response)
-            }
-        }
-        
-        if  dependencies.interactor.homeData?.isEmpty == true {
-            guard let responceAPI = dependencies.interactor.responseAPI else { return }
-            dependencies.interactor.homeData? = responceAPI
-        }
-        
+    func textFieldDidChange(text: String) {
+        dependencies.interactor.searchData(searchText: text)
         view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
     }
     
@@ -109,6 +66,12 @@ extension HomePresenter: HomeViewOutputs {
 }
 
 extension HomePresenter: HomeInteractorOutputs {
+    
+    func metaDataOutput(data: String) {
+        view?.metaDataSearch(searchText: data)
+        view?.tableViewReload(tableViewDataSource: HomeTableViewDataSource(interactor: dependencies.interactor))
+    }
+    
     func onSuccessSearch(data: [HomeEntities.Response]?) {
         guard let data = data else { return }
         dependencies.interactor.homeData = data
@@ -118,6 +81,7 @@ extension HomePresenter: HomeInteractorOutputs {
     }
     
     func onErrorSearch(error: String) {
-        print(error)
+        Alerts().defaultAlert(title: "Erro", message: "Error")
     }
+    
 }
